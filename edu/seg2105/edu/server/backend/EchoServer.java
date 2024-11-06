@@ -26,7 +26,8 @@ public class EchoServer extends AbstractServer
    * The default port to listen on.
    */
   final public static int DEFAULT_PORT = 5555;
-  
+  private String loginKey = "LoginId";
+ 
   //Constructors ****************************************************
   
   /**
@@ -48,13 +49,30 @@ public class EchoServer extends AbstractServer
    * @param msg The message received from the client.
    * @param client The connection from which the message originated.
    */
-  public void handleMessageFromClient
-    (Object msg, ConnectionToClient client)
+  public void handleMessageFromClient(Object msg, ConnectionToClient client)
   {
-    System.out.println("Message received: " + msg + " from " + client);
-    this.sendToAllClients(msg);
+	String mesage = (String)msg;
+	if(mesage.startsWith("#login")) {
+		if (client.getInfo("loginID") != null) {
+            // The login ID is already set, so we handle this as a duplicate login attempt
+            try {
+                client.sendToClient("Error: You are already logged in.");
+                client.close(); // Close the connection as instructed
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } else {
+			System.out.println(mesage);
+			String[] parts = mesage.split(" ");
+			client.setInfo(loginKey, parts[1]);
+			this.sendToAllClients(parts[1] + " has logged on.");
+		
+        }
+	}else {
+    System.out.println("Message received: " + msg + " from " + client.getInfo(loginKey));
+    this.sendToAllClients(client.getInfo(loginKey) +":"+ msg);
+	}
   }
-  
   
     
   /**
